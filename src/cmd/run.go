@@ -1,7 +1,3 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-
-*/
 package cmd
 
 import (
@@ -22,10 +18,11 @@ var stilettoFile string
 var runCmd = &cobra.Command{
 	Use: "run",
 	Run: func(cmd *cobra.Command, args []string) {
-		jobs, err := readStilettoInput()
+		config, err := readStilettoInput()
 		cobra.CheckErr(err)
 
 		ctx := context.Background()
+		// TODO: pipe dagger output a logfile on disk at the execution directory
 		//client, err := dagger.Connect(ctx, dagger.WithLogOutput(os.Stderr))
 		client, err := dagger.Connect(ctx)
 		if err != nil {
@@ -33,10 +30,36 @@ var runCmd = &cobra.Command{
 		}
 		defer client.Close()
 
-		for _, job := range jobs.Jobs {
+		secretEngines := map[string]any{}
+		for _, secret := range config.SecretEngines {
+			secretEngines[secret.Name] = secret.Type
+		}
+
+		services := map[string]*dagger.Container{}
+		for _, service := range config.Services {
+			container := client.Container().From(service.Image)
+			for _, mount := range service.Mounts {
+				container = container.WithDirectory(mount.Container, client.Host().Directory(mount.Host))
+			}
+			for _, env := range service.Env {
+				container = container.WithEnvVariable(env.Key, env.Value)
+			}
+			for _, port := range service.Ports {
+				container = container.WithExposedPort(port.Port, dagger.ContainerWithExposedPortOpts{Protocol: dagger.NetworkProtocol(port.Protocol), Description: port.Name})
+			}
+			if service.Command != "" {
+				container = container.WithExec(strings.Split(service.Command, " "))
+			}
+			services[service.Name] = container
+		}
+
+		for _, job := range config.Pipeline {
 			log.Info().Msgf("Running job: %s", job.Name)
 
 			container := client.Container().From(job.Image)
+			for host, key := range job.Services {
+				container = container.WithServiceBinding(host, services[key])
+			}
 			for _, mount := range job.Mounts {
 				//log.Info().Msgf("With Volume Mount: %s:%s", mount.Host, mount.Container)
 				container = container.WithDirectory(mount.Container, client.Host().Directory(mount.Host))
@@ -45,9 +68,9 @@ var runCmd = &cobra.Command{
 				//log.Info().Msgf("With Cache: %s:%s", cache.Name, cache.Path)
 				container = container.WithMountedCache(cache.Path, client.CacheVolume(cache.Name))
 			}
-			for key, value := range job.Env {
+			for _, env := range job.Env {
 				//log.Info().Msgf("With Env : %s:%s", key, value)
-				container = container.WithEnvVariable(key, value)
+				container = container.WithEnvVariable(env.Key, env.Value)
 			}
 			container = container.WithWorkdir(job.Workdir)
 			for _, command := range job.Commands {
@@ -64,7 +87,6 @@ var runCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(runCmd)
 	runCmd.PersistentFlags().StringVarP(&stilettoFile, "file", "f", ".", "File to read data from. If '-' then reads from stdin. Defaults to read from './stiletto.yaml'")
-
 }
 
 func readStilettoInput() (*pkg.Stiletto, error) {

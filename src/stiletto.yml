@@ -1,28 +1,46 @@
 base: &base
   image: "golang:1.20"
-  caches:
+  caches: &base_caches
     - name: gomodcache
       path: /cache
-  env:
-    GOMODCACHE: /cache
-  mounts:
+  env: &base_env
+    - key: GOMODCACHE
+      value: /cache
+  mounts: &base_mounts
     - host: .
       container: /src
   workdir: /src
 
+# TODO: Implement
+#secretEngines:
+#  - name: vault
+#    type: Vault
+#    spec:
+#      host: https://vault.opslevel.com
+#      token: ${VAULT_TOKEN}
+#      namespace: dev
 
-jobs:
+services:
+  - name: redis
+    image: redis:7.0
+    ports:
+      - port: 6379
+        protocol: TCP
+
+pipeline:
   - name: "test"
     <<: *base
     commands:
-      - pwd
-      - ls -al
       - go test ./...
   - name: "build"
     <<: *base
     commands:
-      - pwd
-      - ls -al
       - go build -o ./cli .
       - chmod +x ./cli
       - ./cli -h
+  - name: "integration"
+    image: redis:7.0
+    services:
+      db: redis
+    commands:
+      - redis-cli -h db -p 6379 ping
