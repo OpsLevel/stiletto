@@ -1,0 +1,28 @@
+base: &base
+  image: "golang:1.20"
+  caches:
+    - name: gomodcache
+      path: /cache
+  env:
+    GOMODCACHE: /cache
+  mounts:
+    - host: .
+      container: /src
+  workdir: /src
+
+
+jobs:
+  - name: "test"
+    <<: *base
+    commands:
+      - pwd
+      - ls -al
+      - go test ./...
+  - name: "build"
+    <<: *base
+    commands:
+      - pwd
+      - ls -al
+      - go build -o ./cli .
+      - chmod +x ./cli
+      - ./cli -h

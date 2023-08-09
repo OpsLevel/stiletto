@@ -5,7 +5,11 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -26,5 +30,41 @@ func Execute() {
 }
 
 func init() {
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.stiletto.yaml)")
+	rootCmd.PersistentFlags().String("log-format", "TEXT", "overrides environment variable 'OPSLEVEL_LOG_FORMAT' (options [\"JSON\", \"TEXT\"])")
+	rootCmd.PersistentFlags().String("log-level", "INFO", "overrides environment variable 'OPSLEVEL_LOG_LEVEL' (options [\"ERROR\", \"WARN\", \"INFO\", \"DEBUG\"])")
+	viper.BindPFlags(rootCmd.PersistentFlags())
+
+	cobra.OnInitialize(onInit)
+}
+
+func onInit() {
+	viper.SetEnvPrefix("OPSLEVEL")
+	viper.AutomaticEnv()
+	viper.ReadInConfig()
+	setupLogging()
+}
+
+func setupLogging() {
+	logFormat := strings.ToLower(viper.GetString("log-format"))
+	logLevel := strings.ToLower(viper.GetString("log-level"))
+
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+
+	if logFormat == "text" {
+		output := zerolog.ConsoleWriter{Out: os.Stderr}
+		log.Logger = log.Output(output)
+	}
+
+	switch {
+	case logLevel == "error":
+		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+	case logLevel == "warn":
+		zerolog.SetGlobalLevel(zerolog.WarnLevel)
+	case logLevel == "debug":
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	case logLevel == "trace":
+		zerolog.SetGlobalLevel(zerolog.TraceLevel)
+	default:
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	}
 }
