@@ -1,4 +1,4 @@
-name: 'OpsLevel - Stiletto'
+name: 'OpsLevel Stiletto'
 author: 'OpsLevel <support@opslevel.com>'
 description: 'Runs CI/CD pipelines anywhere.'
 branding:
@@ -6,9 +6,19 @@ branding:
   color: 'blue'
 inputs:
   file:
-    description: 'The stillto file to run'
+    description: 'The stiletto file to run'
     required: true
     default: './ci/test.yaml'
 runs:
-  using: 'docker'
-  image: 'Dockerfile'
+  using: "composite"
+
+  steps:
+    - name: Setup node
+      uses: actions/setup-go@v4
+      with:
+        go-version: '>=1.20'
+    - name: Run
+      shell: bash
+      run: |-
+        go install github.com/opslevel/stiletto
+        stiletto run -f ${{ inputs.file }}
