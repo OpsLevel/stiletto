@@ -1,0 +1,20 @@
+base: &base
+  image: "golang:1.20"
+  caches: &base_caches
+    - name: gomodcache
+      path: /cache
+  env: &base_env
+    - key: GOMODCACHE
+      value: /cache
+  mounts: &base_mounts
+    - host: .
+      container: /workspace
+  workdir: /workspace
+
+pipeline:
+  - name: "test"
+    <<: *base
+    workdir: /workspace/src
+    commands:
+      - go mod tidy
+      - go test -race -coverprofile=coverage.txt -covermode=atomic -v ./...

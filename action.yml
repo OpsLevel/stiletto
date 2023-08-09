@@ -1,0 +1,11 @@
+name: 'OpsLevel - Stiletto'
+author: 'OpsLevel <support@opslevel.com>'
+description: 'Runs CI/CD pipelines anywhere.'
+branding:
+  icon: 'package'
+  color: 'blue'
+inputs:
+  file:
+    description: 'The stillto file to run'
+    required: true
+    default: './ci/test.yaml'
