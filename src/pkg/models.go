@@ -17,10 +17,9 @@ type Port struct {
 }
 
 type EnvVar struct {
-	Key   string         `yaml:"key"`
-	Value string         `yaml:"value"`
-	Type  string         `yaml:"type"`
-	Spec  map[string]any `yaml:"spec"`
+	Key       string `yaml:"key"`
+	Value     string `yaml:"value"`
+	ValueFrom string `yaml:"valueFrom"`
 }
 
 type Service struct {
@@ -49,8 +48,15 @@ type SecretEngine struct {
 	Spec map[string]any `yaml:"spec"`
 }
 
+type Secret struct {
+	Name string         `yaml:"name"`
+	From string         `yaml:"from"`
+	Spec map[string]any `yaml:"spec"`
+}
+
 type Stiletto struct {
 	SecretEngines []SecretEngine `yaml:"secretEngines"`
+	Secrets       []Secret       `yaml:"secrets"`
 	Services      []Service      `yaml:"services"`
 	Pipeline      []Job          `yaml:"pipeline"`
 }

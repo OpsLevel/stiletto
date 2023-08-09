@@ -35,6 +35,13 @@ var runCmd = &cobra.Command{
 			secretEngines[secret.Name] = secret.Type
 		}
 
+		secrets := map[string]*dagger.Secret{}
+		for _, secret := range config.Secrets {
+			if secret.From == "env" {
+				secrets[secret.Name] = client.SetSecret(secret.Name, os.Getenv(secret.Name))
+			}
+		}
+
 		services := map[string]*dagger.Container{}
 		for _, service := range config.Services {
 			container := client.Container().From(service.Image)
@@ -42,7 +49,11 @@ var runCmd = &cobra.Command{
 				container = container.WithDirectory(mount.Container, client.Host().Directory(mount.Host))
 			}
 			for _, env := range service.Env {
-				container = container.WithEnvVariable(env.Key, env.Value)
+				if env.ValueFrom != "" {
+					container = container.WithSecretVariable(env.Key, secrets[env.ValueFrom])
+				} else {
+					container = container.WithEnvVariable(env.Key, env.Value)
+				}
 			}
 			for _, port := range service.Ports {
 				container = container.WithExposedPort(port.Port, dagger.ContainerWithExposedPortOpts{Protocol: dagger.NetworkProtocol(port.Protocol), Description: port.Name})
@@ -69,8 +80,11 @@ var runCmd = &cobra.Command{
 				container = container.WithMountedCache(cache.Path, client.CacheVolume(cache.Name))
 			}
 			for _, env := range job.Env {
-				//log.Info().Msgf("With Env : %s:%s", key, value)
-				container = container.WithEnvVariable(env.Key, env.Value)
+				if env.ValueFrom != "" {
+					container = container.WithSecretVariable(env.Key, secrets[env.ValueFrom])
+				} else {
+					container = container.WithEnvVariable(env.Key, env.Value)
+				}
 			}
 			container = container.WithWorkdir(job.Workdir)
 			for _, command := range job.Commands {

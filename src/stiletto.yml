@@ -6,6 +6,8 @@ base: &base
   env: &base_env
     - key: GOMODCACHE
       value: /cache
+    - key: GITHUB_TOKEN
+      valueFrom: GITHUB_TOKEN
   mounts: &base_mounts
     - host: .
       container: /src
@@ -19,6 +21,14 @@ base: &base
 #      host: https://vault.opslevel.com
 #      token: ${VAULT_TOKEN}
 #      namespace: dev
+
+secrets:
+  - name: GITHUB_TOKEN
+    from: env
+  - name: MYSQL_PASSWORD
+    from: vault
+    spec:
+      path: /secrets/mysql/password
 
 services:
   - name: redis
