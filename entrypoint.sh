@@ -1,3 +1,3 @@
 #!/bin/sh -l
 
-go run main.go -f ${INPUT_FILE}
+stiletto run -f ${INPUT_FILE}
