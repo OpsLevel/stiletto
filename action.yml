@@ -9,3 +9,6 @@ inputs:
     description: 'The stillto file to run'
     required: true
     default: './ci/test.yaml'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
