@@ -12,8 +12,13 @@ base: &base
   workdir: /workspace
 
 pipeline:
-  - name: "test"
+  - name: Run Tests
     <<: *base
     commands:
       - go mod tidy
       - go test -race -coverprofile=coverage.txt -covermode=atomic -v ./...
+  - name: Upload Coverage
+    image: ubuntu:latest
+    <<: *base_mounts
+    commands:
+      - bash <(curl -s https://codecov.io/bash)
