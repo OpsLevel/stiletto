@@ -23,8 +23,8 @@ var runCmd = &cobra.Command{
 
 		ctx := context.Background()
 		// TODO: pipe dagger output a logfile on disk at the execution directory
-		client, err := dagger.Connect(ctx, dagger.WithLogOutput(os.Stderr))
-		//client, err := dagger.Connect(ctx)
+		//client, err := dagger.Connect(ctx, dagger.WithLogOutput(os.Stderr))
+		client, err := dagger.Connect(ctx)
 		if err != nil {
 			panic(err)
 		}
