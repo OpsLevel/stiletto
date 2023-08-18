@@ -22,6 +22,16 @@ type EnvVar struct {
 	ValueFrom string `yaml:"valueFrom"`
 }
 
+type Artifact struct {
+	Name string `yaml:"name"`
+	Path string `yaml:"path"`
+}
+
+type Dependency struct {
+	Name string `yaml:"name"`
+	Path string `yaml:"path"`
+}
+
 type Service struct {
 	Name    string   `yaml:"name"`
 	Image   string   `yaml:"image"`
@@ -32,14 +42,16 @@ type Service struct {
 }
 
 type Job struct {
-	Name     string            `yaml:"name"`
-	Image    string            `yaml:"image"`
-	Services map[string]string `yaml:"services"`
-	Caches   []Cache           `yaml:"caches"`
-	Mounts   []Mount           `yaml:"mounts"`
-	Env      []EnvVar          `yaml:"env"`
-	Workdir  string            `yaml:"workdir"`
-	Commands []string          `yaml:"commands"`
+	Name         string            `yaml:"name"`
+	Image        string            `yaml:"image"`
+	Services     map[string]string `yaml:"services"`
+	Caches       []Cache           `yaml:"caches"`
+	Mounts       []Mount           `yaml:"mounts"`
+	Env          []EnvVar          `yaml:"env"`
+	Workdir      string            `yaml:"workdir"`
+	Artifacts    []Artifact        `yaml:"artifacts"`
+	Dependencies []Dependency      `yaml:"dependencies"`
+	Commands     []string          `yaml:"commands"`
 }
 
 type SecretEngine struct {
