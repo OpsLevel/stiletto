@@ -9,7 +9,7 @@ base: &base
   mounts: &base_mounts
     - host: .
       container: /workspace
-  workdir: /workspace
+  workdir: &base_workdir /workspace
 
 pipeline:
   - name: Run Tests
@@ -17,8 +17,21 @@ pipeline:
     commands:
       - go mod tidy
       - go test -race -coverprofile=coverage.txt -covermode=atomic -v ./...
+    artifacts:
+      - name: Coverage
+        path: coverage.txt
   - name: Upload Coverage
-    image: ubuntu:latest
-    <<: *base_mounts
+    image: debian:bullseye
+    mounts:
+      - host: .
+        container: /workspace
+    workdir: /workspace
+    dependencies:
+      - name: Coverage
+        path: ./tmp/coverage.txt
     commands:
-      - bash <(curl -s https://codecov.io/bash)
+      - apt-get update -y
+      - apt-get install -y curl git
+      - curl -Os https://uploader.codecov.io/latest/linux/codecov
+      - chmod +x codecov
+      - ./codecov -R /workspace -B $(git branch --show-current) -t 464532ed-1ff3-4c0e-a803-4b9f77004715 -f ./tmp/coverage.txt
