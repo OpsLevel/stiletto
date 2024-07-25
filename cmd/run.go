@@ -64,6 +64,9 @@ var runCmd = &cobra.Command{
 			services[service.Name] = container
 		}
 
+		artifacts := map[string]*dagger.File{}
+
+		// TODO: the order of these things matters for example local artifact files don't work unless the workdir is set.
 		for _, job := range config.Pipeline {
 			log.Info().Msgf("Running job: %s", job.Name)
 
@@ -87,6 +90,11 @@ var runCmd = &cobra.Command{
 				}
 			}
 			container = container.WithWorkdir(job.Workdir)
+			for _, dependency := range job.Dependencies {
+				// TODO: Try get artifact by name
+				container = container.WithFile(dependency.Path, artifacts[dependency.Name])
+			}
+
 			for _, command := range job.Commands {
 				//log.Info().Msgf("Running command: %s", command)
 				container = container.WithExec(strings.Split(command, " "))
@@ -94,6 +102,10 @@ var runCmd = &cobra.Command{
 			out, err := container.Stdout(ctx)
 			cobra.CheckErr(err)
 			log.Info().Msg(out)
+
+			for _, artifact := range job.Artifacts {
+				artifacts[artifact.Name] = container.File(artifact.Path)
+			}
 		}
 	},
 }
@@ -123,5 +135,6 @@ func readStilettoInput() (*pkg.Stiletto, error) {
 	}
 	job := &pkg.Stiletto{}
 	viper.Unmarshal(&job)
+	// TODO: Apply defaults to certain struct types using the struct tag defaults thing
 	return job, nil
 }
