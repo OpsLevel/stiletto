@@ -1,6 +1,6 @@
 module github.com/opslevel/stiletto
 
-go 1.20
+go 1.23
 
 require (
 	dagger.io/dagger v0.8.1
